@@ -1,0 +1,9 @@
+﻿@model ShowtimeFormInput
+@{
+    var id = (int)(ViewData["ShowtimeId"] ?? 0);
+    ViewData["Title"] = $"Sửa suất chiếu #{id}";
+    ViewData["FormTitle"] = $"Sửa suất chiếu #{id}";
+    ViewData["IsEdit"] = true;
+}
+
+<partial name="_Form" model="Model" />

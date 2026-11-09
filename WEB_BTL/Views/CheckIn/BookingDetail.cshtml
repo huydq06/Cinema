@@ -1,0 +1,33 @@
+﻿@model BookingDto
+@{
+    ViewData["Title"] = "Chi tiết đơn " + Model.BookingCode;
+    var startLocal = Model.ShowStartAtUtc.AddHours(7);
+}
+
+<h1 class="cs-page-title mb-3">Đơn @Model.BookingCode</h1>
+
+<dl class="row">
+    <dt class="col-sm-3">Phim</dt><dd class="col-sm-9">@Model.MovieTitle · @Model.RoomName</dd>
+    <dt class="col-sm-3">Suất chiếu</dt><dd class="col-sm-9">@startLocal.ToString("dd/MM/yyyy HH:mm")</dd>
+    <dt class="col-sm-3">Khách</dt><dd class="col-sm-9">@Model.ContactName (@Model.ContactEmail / @Model.ContactPhone)</dd>
+    <dt class="col-sm-3">Kênh</dt><dd class="col-sm-9">@Model.Channel</dd>
+    <dt class="col-sm-3">Trạng thái</dt><dd class="col-sm-9">@Model.Status</dd>
+    <dt class="col-sm-3">Tổng tiền</dt><dd class="col-sm-9">@Model.FinalAmount.ToString("N0") đ</dd>
+</dl>
+
+<table class="table table-sm">
+    <thead><tr><th>Ghế</th><th>Loại</th><th>Trạng thái vé</th><th>Soát lúc</th></tr></thead>
+    <tbody>
+        @foreach (var ticket in Model.Tickets)
+        {
+            <tr>
+                <td>@ticket.SeatCode</td>
+                <td>@ticket.SeatType</td>
+                <td>@ticket.Status</td>
+                <td>@(ticket.CheckedInAtUtc?.AddHours(7).ToString("HH:mm dd/MM/yyyy") ?? "—")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a class="btn btn-outline-secondary" asp-controller="CheckIn" asp-action="Index">Quay lại soát vé</a>

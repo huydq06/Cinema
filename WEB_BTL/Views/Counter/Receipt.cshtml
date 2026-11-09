@@ -1,0 +1,45 @@
+﻿@model BookingDto
+@{
+    ViewData["Title"] = "Biên lai";
+    var startLocal = Model.ShowStartAtUtc.AddHours(7);
+}
+
+<h1 class="cs-page-title mb-3">Biên lai — @Model.BookingCode</h1>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <p class="mb-1"><strong>@Model.MovieTitle</strong> · @Model.RoomName</p>
+        <p class="text-muted">@startLocal.ToString("dd/MM/yyyy HH:mm")</p>
+        <p class="mb-1">Khách: @Model.ContactName</p>
+        <p>Ghế: @string.Join(", ", Model.Tickets.Select(t => t.SeatCode))</p>
+
+        <table class="table table-sm mb-2">
+            <tbody>
+                <tr><td>Tổng vé</td><td class="text-end">@Model.TicketAmount.ToString("N0") đ</td></tr>
+                <tr><td>Tổng combo</td><td class="text-end">@Model.ComboAmount.ToString("N0") đ</td></tr>
+                <tr><th>Thành tiền</th><th class="text-end">@Model.FinalAmount.ToString("N0") đ</th></tr>
+            </tbody>
+        </table>
+
+        <p class="mb-0"><span class="badge bg-success">@Model.Status</span>
+            <span class="ms-2 small text-muted">Đã thu tiền mặt và phát vé.</span></p>
+    </div>
+</div>
+
+@if (Model.Tickets.Any(t => t.Status == "Issued"))
+{
+    <h2 class="h6">Mã vào cửa</h2>
+    @foreach (var ticket in Model.Tickets.Where(t => t.Status == "Issued"))
+    {
+        <div class="small mb-1">Ghế @ticket.SeatCode · <code class="text-break">@ticket.QrToken</code></div>
+    }
+}
+else
+{
+    <p class="small text-muted">Mã vào cửa chỉ hiển thị ở kênh in vé của rạp.</p>
+}
+
+<div class="d-flex gap-2 mt-3">
+    <a class="btn btn-primary" asp-controller="Counter" asp-action="Index">Bán vé tiếp</a>
+    <a class="btn btn-outline-secondary" asp-controller="CheckIn" asp-action="Index">Soát vé</a>
+</div>

@@ -1,0 +1,144 @@
+﻿@model RevenueReportDto
+@{
+    ViewData["Title"] = "Báo cáo doanh thu";
+    var maxDaily = Model.Daily.Count == 0 ? 0m : Model.Daily.Max(d => d.Captured);
+}
+
+<h1 class="cs-page-title mb-3">Báo cáo doanh thu</h1>
+
+<form method="get" asp-controller="Reports" asp-action="Revenue" class="row g-2 align-items-end mb-4">
+    <div class="col-6 col-md-3">
+        <label for="from" class="form-label">Từ ngày</label>
+        <input id="from" name="from" type="date" value="@Model.FromDate.ToString("yyyy-MM-dd")" class="form-control" />
+    </div>
+    <div class="col-6 col-md-3">
+        <label for="to" class="form-label">Đến ngày</label>
+        <input id="to" name="to" type="date" value="@Model.ToDate.ToString("yyyy-MM-dd")" class="form-control" />
+    </div>
+    <div class="col-12 col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Xem</button>
+    </div>
+</form>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Tiền thực thu</div>
+            <div class="h5 mb-0">@Model.GrossCaptured.ToString("N0") đ</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Tiền hoàn</div>
+            <div class="h5 mb-0">@Model.Refunded.ToString("N0") đ</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Dòng tiền ròng</div>
+            <div class="h5 mb-0">@Model.NetCashFlow.ToString("N0") đ</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Tỷ lệ lấp đầy</div>
+            <div class="h5 mb-0">@Model.OccupancyPercent.ToString("0.##")%</div>
+        </div></div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Doanh số bán vé</div>
+            <div class="h6 mb-0">@Model.TicketSales.ToString("N0") đ</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Doanh số combo</div>
+            <div class="h6 mb-0">@Model.ComboSales.ToString("N0") đ</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Đơn bị rạp hủy</div>
+            <div class="h6 mb-0">@Model.CancelledShowtimeSales.ToString("N0") đ</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Vé bán / đã soát</div>
+            <div class="h6 mb-0">@Model.TicketsIssued / @Model.TicketsCheckedIn</div>
+        </div></div>
+    </div>
+</div>
+
+<h2 class="h6">Theo ngày</h2>
+@if (Model.Daily.Count == 0)
+{
+    <p class="text-muted">Không có giao dịch trong khoảng đã chọn.</p>
+}
+else
+{
+    <div class="table-responsive mb-4">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>Ngày</th>
+                    <th style="width:40%">Thực thu</th>
+                    <th class="text-end">Thực thu</th>
+                    <th class="text-end">Hoàn</th>
+                    <th class="text-end">Đơn xác nhận</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Daily)
+                {
+                    var width = maxDaily <= 0 ? 0 : (int)Math.Round(row.Captured * 100m / maxDaily);
+                    <tr>
+                        <td>@row.Date.ToString("dd/MM")</td>
+                        <td>
+                            <div class="progress" style="height:10px" role="img"
+                                 aria-label="@row.Date.ToString("dd/MM"): @row.Captured.ToString("N0") đồng">
+                                <div class="progress-bar" style="width:@width%"></div>
+                            </div>
+                        </td>
+                        <td class="text-end">@row.Captured.ToString("N0") đ</td>
+                        <td class="text-end">@row.Refunded.ToString("N0") đ</td>
+                        <td class="text-end">@row.BookingsConfirmed</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h2 class="h6">Top phim theo doanh số vé</h2>
+@if (Model.TopMovies.Count == 0)
+{
+    <p class="text-muted">Chưa có dữ liệu.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm">
+            <thead><tr><th>Phim</th><th class="text-end">Doanh số vé</th><th class="text-end">Số vé</th></tr></thead>
+            <tbody>
+                @foreach (var movie in Model.TopMovies)
+                {
+                    <tr>
+                        <td>@movie.MovieTitle</td>
+                        <td class="text-end">@movie.TicketSales.ToString("N0") đ</td>
+                        <td class="text-end">@movie.TicketsSold</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<p class="small text-muted mt-3">
+    Tiền thực thu tính theo giao dịch đã ghi nhận tiền trong kỳ; tiền hoàn có thể thuộc kỳ trước.
+    Doanh số vé/combo tính theo đơn đã xác nhận; đơn bị rạp hủy được hiển thị riêng để không nhầm là tiền ròng.
+</p>

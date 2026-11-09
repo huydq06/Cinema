@@ -1,0 +1,47 @@
+﻿@model CheckInRequest
+@{
+    ViewData["Title"] = "Soát vé";
+    var checkedIn = ViewData["CheckedIn"] as CheckInResultDto;
+}
+
+<h1 class="cs-page-title mb-3">Soát vé tại cửa</h1>
+
+@if (checkedIn is not null)
+{
+    <div class="alert alert-success" role="status">
+        <h2 class="h5">Hợp lệ</h2>
+        <p class="mb-1"><strong>@checkedIn.MovieTitle</strong> · @checkedIn.RoomName</p>
+        <p class="mb-1">Ghế <strong>@checkedIn.SeatCode</strong></p>
+        <p class="mb-0 small">Soát lúc @ViewData["CheckedInLocal"]</p>
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-12 col-lg-6">
+        <form asp-controller="CheckIn" asp-action="Index" method="post" novalidate>
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+            <div class="mb-3">
+                <label asp-for="Token" class="form-label">Mã vé (QR token)</label>
+                <input asp-for="Token" class="form-control form-control-lg" autofocus autocomplete="off" />
+                <div class="form-text">Quét mã QR bằng đầu đọc hoặc dán token vào đây.</div>
+                <span asp-validation-for="Token" class="text-danger small"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg">Soát vé</button>
+        </form>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h2 class="h6">Tra cứu đơn</h2>
+                <a class="btn btn-outline-primary" asp-controller="CheckIn" asp-action="Lookup">Mở tra cứu đơn</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

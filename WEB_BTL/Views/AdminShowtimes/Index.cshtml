@@ -1,0 +1,87 @@
+﻿@model IReadOnlyList<ShowtimeSummaryDto>
+@{
+    ViewData["Title"] = "Quản lý suất chiếu";
+    var date = ViewData["Date"] as string;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <h1 class="cs-page-title mb-0">Suất chiếu</h1>
+    <div class="d-flex gap-2 align-items-end">
+        <form method="get" asp-controller="AdminShowtimes" asp-action="Index" class="d-flex gap-2 align-items-end">
+            <div>
+                <label for="date" class="form-label small mb-1">Ngày</label>
+                <input id="date" name="date" type="date" value="@date" class="form-control form-control-sm" />
+            </div>
+            <button type="submit" class="btn btn-sm btn-outline-primary">Xem</button>
+        </form>
+        <a class="btn btn-primary" asp-controller="AdminShowtimes" asp-action="Create">Thêm suất</a>
+    </div>
+</div>
+
+@if (Model.Count == 0)
+{
+    <p class="text-muted">Không có suất chiếu trong ngày đã chọn.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Giờ</th>
+                    <th>Phim</th>
+                    <th>Phòng</th>
+                    <th>Giá gốc</th>
+                    <th>Ghế đã bán/giữ</th>
+                    <th>Trạng thái</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var slot in Model)
+                {
+                    var badge = slot.Status switch
+                    {
+                        "OnSale" => "bg-success",
+                        "Draft" => "bg-warning text-dark",
+                        "Cancelled" => "bg-danger",
+                        _ => "bg-secondary"
+                    };
+                    <tr>
+                        <td>@slot.ShowtimeId</td>
+                        <td>@slot.StartAtUtc.AddHours(7).ToString("HH:mm")</td>
+                        <td>@slot.MovieTitle</td>
+                        <td>@slot.RoomName</td>
+                        <td>@slot.BasePrice.ToString("N0") đ</td>
+                        <td>@slot.SoldSeats/@slot.TotalSeats</td>
+                        <td><span class="badge @badge">@slot.Status</span></td>
+                        <td class="text-end text-nowrap">
+                            <a class="btn btn-sm btn-outline-primary"
+                               asp-controller="AdminShowtimes" asp-action="Edit" asp-route-id="@slot.ShowtimeId">Sửa</a>
+                            <a class="btn btn-sm btn-outline-secondary"
+                               asp-controller="AdminShowtimes" asp-action="Seats" asp-route-id="@slot.ShowtimeId">Ghế</a>
+
+                            @if (slot.Status == "Draft")
+                            {
+                                <form asp-controller="AdminShowtimes" asp-action="Publish" asp-route-id="@slot.ShowtimeId"
+                                      method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-success">Mở bán</button>
+                                </form>
+                            }
+                            @if (slot.Status is "Draft" or "OnSale")
+                            {
+                                <a class="btn btn-sm btn-outline-danger"
+                                   asp-controller="AdminShowtimes" asp-action="Cancel" asp-route-id="@slot.ShowtimeId">Hủy</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<p class="small text-muted">
+    Suất đã OnSale không sửa được phòng, giờ hay giá gốc. Cần thay đổi thì hủy và tạo suất mới.
+</p>

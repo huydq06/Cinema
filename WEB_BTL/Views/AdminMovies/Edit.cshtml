@@ -1,0 +1,160 @@
+﻿@model MovieInput
+@{
+    ViewData["Title"] = "Sửa phim";
+    var movieId = (int)(ViewData["MovieId"] ?? 0);
+    var genres = ViewData["Genres"] as IReadOnlyList<WEB_BTL.Domain.Entities.Genre> ?? [];
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="cs-page-title mb-0">Sửa phim #@movieId</h1>
+    <a class="btn btn-link px-0" asp-controller="AdminMovies" asp-action="Index">Quay lại danh sách</a>
+</div>
+
+<form asp-controller="AdminMovies" asp-action="Edit" asp-route-id="@movieId" method="post" novalidate>
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+    <input type="hidden" asp-for="RowVersion" value="@(Model.RowVersion is null ? "" : Convert.ToBase64String(Model.RowVersion))" />
+
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            <label asp-for="Title" class="form-label">Tên phim</label>
+            <input asp-for="Title" class="form-control" />
+            <span asp-validation-for="Title" class="text-danger small"></span>
+        </div>
+        <div class="col-12 col-md-6">
+            <label asp-for="Slug" class="form-label">Slug</label>
+            <input asp-for="Slug" class="form-control" />
+            <span asp-validation-for="Slug" class="text-danger small"></span>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <label asp-for="DurationMinutes" class="form-label">Thời lượng (phút)</label>
+            <input asp-for="DurationMinutes" class="form-control" type="number" min="1" max="600" />
+        </div>
+        <div class="col-6 col-md-3">
+            <label asp-for="ReleaseDate" class="form-label">Ngày khởi chiếu</label>
+            <input asp-for="ReleaseDate" class="form-control" type="date" />
+        </div>
+        <div class="col-6 col-md-3">
+            <label asp-for="AgeRating" class="form-label">Phân loại</label>
+            <input asp-for="AgeRating" class="form-control" />
+        </div>
+        <div class="col-12 col-md-6">
+            <label asp-for="PosterUrl" class="form-label">Poster</label>
+            <div class="d-flex gap-2 align-items-start">
+                <div class="flex-grow-1">
+                    <input asp-for="PosterUrl" class="form-control" placeholder="/uploads/posters/..." readonly />
+                    <span asp-validation-for="PosterUrl" class="text-danger small"></span>
+                    <div class="mt-2">
+                        <input type="file" id="poster-upload" accept="image/jpeg,image/png,image/webp" class="form-control" />
+                        <div class="form-text">JPG, PNG, WEBP. Tối đa 5MB.</div>
+                    </div>
+                </div>
+                <div id="poster-preview" style="display:none; width: 120px; height: 160px; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden;">
+                    <img id="poster-img" src="" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;" />
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+            <label asp-for="Director" class="form-label">Đạo diễn</label>
+            <input asp-for="Director" class="form-control" />
+        </div>
+        <div class="col-12 col-md-6">
+            <label asp-for="TrailerUrl" class="form-label">Trailer</label>
+            <input asp-for="TrailerUrl" class="form-control" />
+        </div>
+
+        <div class="col-12">
+            <label asp-for="Cast" class="form-label">Diễn viên</label>
+            <input asp-for="Cast" class="form-control" />
+        </div>
+
+        <div class="col-12">
+            <label asp-for="DescriptionHtml" class="form-label">Mô tả</label>
+            <textarea asp-for="DescriptionHtml" class="form-control" rows="6"></textarea>
+        </div>
+
+        <div class="col-12">
+            <fieldset>
+                <legend class="h6">Thể loại</legend>
+                <div class="d-flex flex-wrap gap-3">
+                    @foreach (var genre in genres)
+                    {
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="GenreIds" value="@genre.GenreId"
+                                   id="genre-@genre.GenreId" checked="@Model.GenreIds.Contains(genre.GenreId)" />
+                            <label class="form-check-label" for="genre-@genre.GenreId">@genre.Name</label>
+                        </div>
+                    }
+                </div>
+            </fieldset>
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+    </div>
+</form>
+
+<div class="mt-3 d-flex flex-wrap gap-2">
+    <form asp-controller="AdminMovies" asp-action="Publish" asp-route-id="@movieId" method="post" class="d-inline">
+        <button type="submit" class="btn btn-success">Xuất bản</button>
+    </form>
+    <form asp-controller="AdminMovies" asp-action="Archive" asp-route-id="@movieId" method="post" class="d-inline">
+        <button type="submit" class="btn btn-outline-secondary">Lưu trữ</button>
+    </form>
+</div>
+
+<p class="small text-muted mt-3">
+    Sau khi phim đã có suất đang bán, sửa thời lượng không làm đổi các suất đã tạo.
+    Lưu trữ bị chặn khi phim còn suất chưa chiếu.
+</p>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+    (function() {
+        const uploadInput = document.getElementById('poster-upload');
+        const posterUrlInput = document.getElementById('PosterUrl');
+        const preview = document.getElementById('poster-preview');
+        const previewImg = document.getElementById('poster-img');
+
+        uploadInput.addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('category', 'posters');
+
+            try {
+                uploadInput.disabled = true;
+                const response = await fetch('/api/upload/image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.url) {
+                    posterUrlInput.value = result.url;
+                    previewImg.src = result.url;
+                    preview.style.display = 'block';
+                } else {
+                    alert('Lỗi upload: ' + (result.error || 'Không xác định'));
+                }
+            } catch (err) {
+                alert('Lỗi kết nối: ' + err.message);
+            } finally {
+                uploadInput.disabled = false;
+            }
+        });
+
+        // Hiển thị preview nếu đã có URL
+        if (posterUrlInput.value) {
+            previewImg.src = posterUrlInput.value;
+            preview.style.display = 'block';
+        }
+    })();
+    </script>
+}

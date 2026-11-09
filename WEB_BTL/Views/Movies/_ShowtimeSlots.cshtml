@@ -1,0 +1,38 @@
+﻿@model IReadOnlyList<ShowtimeSlotDto>
+@{
+    var utcNow = DateTime.UtcNow;
+}
+
+@if (Model.Count == 0)
+{
+    <p class="text-muted">Không có suất chiếu trong ngày này.</p>
+}
+else
+{
+    <div class="d-flex flex-wrap gap-2">
+        @foreach (var slot in Model)
+        {
+            var startLocal = slot.StartAtUtc.AddHours(7);
+            var salesOpen = slot.Status == "OnSale" && slot.StartAtUtc > utcNow.AddMinutes(10);
+            var soldOut = slot.AvailableSeats == 0;
+
+            if (salesOpen && !soldOut)
+            {
+                <a class="btn btn-outline-primary"
+                   asp-controller="Booking" asp-action="Seats" asp-route-showtimeId="@slot.ShowtimeId">
+                    <span class="d-block fw-semibold">@startLocal.ToString("HH:mm")</span>
+                    <span class="small">@slot.RoomName · @slot.AvailableSeats/@slot.TotalSeats ghế</span>
+                    <span class="d-block small">@slot.BasePrice.ToString("N0") đ</span>
+                </a>
+            }
+            else
+            {
+                <button type="button" class="btn btn-outline-secondary" disabled>
+                    <span class="d-block fw-semibold">@startLocal.ToString("HH:mm")</span>
+                    <span class="small">@slot.RoomName</span>
+                    <span class="d-block small">@(soldOut ? "Hết ghế" : "Ngừng bán")</span>
+                </button>
+            }
+        }
+    </div>
+}

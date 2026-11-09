@@ -1,0 +1,17 @@
+@{
+    ViewData["Title"] = "Đồng bộ dữ liệu";
+}
+
+<h1 class="cs-page-title mb-3">Đồng bộ dữ liệu phim</h1>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h2 class="h6">TMDB</h2>
+        <p class="text-muted small mb-2">Lấy danh sách phim đang chiếu từ The Movie Database (TMDB) và thêm vào DB. Phim mới có trạng thái Published.</p>
+        <form asp-controller="AdminSync" asp-action="SyncTmdb" method="post">
+            <button type="submit" class="cs-btn cs-btn-primary">Đồng bộ phim đang chiếu</button>
+        </form>
+    </div>
+</div>
+
+<a class="btn btn-outline-secondary" asp-controller="Dashboard" asp-action="Index">← Quay lại dashboard</a>

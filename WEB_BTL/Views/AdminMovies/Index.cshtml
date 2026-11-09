@@ -1,0 +1,71 @@
+﻿@model IReadOnlyList<AdminMovieListItemDto>
+@{
+    ViewData["Title"] = "Quản lý phim";
+    var keyword = ViewData["Keyword"] as string;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <h1 class="cs-page-title mb-0">Quản lý phim</h1>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" asp-controller="AdminMovies" asp-action="Genres">Thể loại</a>
+        <a class="btn btn-primary" asp-controller="AdminMovies" asp-action="Create">Thêm phim</a>
+    </div>
+</div>
+
+<form method="get" asp-controller="AdminMovies" asp-action="Index" class="row g-2 align-items-end mb-3">
+    <div class="col-12 col-md-5">
+        <label for="q" class="form-label">Tìm theo tên hoặc slug</label>
+        <input id="q" name="q" value="@keyword" class="form-control" />
+    </div>
+    <div class="col-12 col-md-2">
+        <button type="submit" class="btn btn-outline-primary w-100">Tìm</button>
+    </div>
+</form>
+
+@if (Model.Count == 0)
+{
+    <p class="text-muted">Chưa có phim nào.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Phim</th>
+                    <th>Phân loại</th>
+                    <th>Thời lượng</th>
+                    <th>Khởi chiếu</th>
+                    <th>Suất chiếu</th>
+                    <th>Xuất bản</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var movie in Model)
+                {
+                    var badge = movie.PublicationStatus switch
+                    {
+                        "Published" => "bg-success",
+                        "Archived" => "bg-secondary",
+                        _ => "bg-warning text-dark"
+                    };
+                    <tr>
+                        <td>@movie.MovieId</td>
+                        <td>@movie.Title <span class="text-muted small">@movie.Slug</span></td>
+                        <td>@movie.AgeRating</td>
+                        <td>@movie.DurationMinutes phút</td>
+                        <td>@movie.ReleaseDate.ToString("dd/MM/yyyy")</td>
+                        <td>@movie.ShowtimeCount</td>
+                        <td><span class="badge @badge">@movie.PublicationStatus</span></td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-primary"
+                               asp-controller="AdminMovies" asp-action="Edit" asp-route-id="@movie.MovieId">Sửa</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

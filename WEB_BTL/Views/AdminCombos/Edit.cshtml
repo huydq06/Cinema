@@ -1,0 +1,50 @@
+@model WEB_BTL.Domain.Entities.FoodCombo
+@{
+    ViewData["Title"] = "Sửa combo";
+}
+
+<h1 class="cs-page-title mb-3">Sửa combo: @Model.Name</h1>
+
+<form asp-action="Edit" asp-route-id="@Model.ComboId" method="post" novalidate>
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            <label asp-for="Name" class="form-label">Tên combo</label>
+            <input asp-for="Name" class="form-control" required maxlength="100" />
+            <span asp-validation-for="Name" class="text-danger small"></span>
+        </div>
+
+        <div class="col-12 col-md-6">
+            <label asp-for="Price" class="form-label">Giá (VND)</label>
+            <input asp-for="Price" class="form-control" type="number" min="0" step="1000" required />
+            <span asp-validation-for="Price" class="text-danger small"></span>
+        </div>
+
+        <div class="col-12">
+            <label asp-for="Description" class="form-label">Mô tả</label>
+            <textarea asp-for="Description" class="form-control" rows="2" maxlength="500"></textarea>
+        </div>
+
+        <div class="col-12 col-md-6">
+            <label asp-for="ImageUrl" class="form-label">Ảnh (không bắt buộc)</label>
+            <input asp-for="ImageUrl" class="form-control" maxlength="500" />
+        </div>
+
+        <div class="col-12 col-md-6 d-flex align-items-end">
+            <div class="form-check mb-2">
+                <input asp-for="IsAvailable" class="form-check-input" />
+                <label asp-for="IsAvailable" class="form-check-label">Đang bán</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Hủy</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

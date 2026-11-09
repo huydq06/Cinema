@@ -1,0 +1,62 @@
+﻿@model BookingDto
+@inject WEB_BTL.Infrastructure.QrCode.IQrCodeGenerator QrCode
+@{
+    ViewData["Title"] = "Vé điện tử";
+    var startLocal = Model.ShowStartAtUtc.AddHours(7);
+}
+
+<h1 class="cs-page-title mb-3">Vé điện tử</h1>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5">@Model.MovieTitle</h2>
+                <p class="text-muted">@Model.RoomName · @startLocal.ToString("dd/MM/yyyy HH:mm")</p>
+
+                <p class="mb-1"><strong>Mã đơn:</strong> <code>@Model.BookingCode</code></p>
+                <p class="mb-1"><strong>Người nhận:</strong> @Model.ContactName</p>
+                <p><strong>Tổng tiền:</strong> @Model.FinalAmount.ToString("N0") đ</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h6">Mã vào cửa</h2>
+                @foreach (var ticket in Model.Tickets)
+                {
+                    <div class="border rounded p-2 mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span class="fw-semibold">Ghế @ticket.SeatCode (@ticket.SeatType)</span>
+                            <span class="badge @(ticket.Status == "Issued" ? "bg-success" : "bg-secondary")">@ticket.Status</span>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(ticket.QrToken))
+                        {
+                            <div class="mt-2 d-flex gap-3 align-items-start">
+                                <img src="@QrCode.GenerateDataUri(ticket.QrToken)"
+                                     alt="Mã QR cho ghế @ticket.SeatCode"
+                                     width="120" height="120" class="border rounded" />
+                                <div class="small text-muted flex-grow-1">
+                                    <div>Đưa mã QR này cho nhân viên soát vé.</div>
+                                    <div class="mt-1 text-break"><code>@ticket.QrToken</code></div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (ticket.CheckedInAtUtc is not null)
+                        {
+                            <div class="small text-success mt-1">
+                                Đã soát lúc @ticket.CheckedInAtUtc.Value.AddHours(7).ToString("HH:mm dd/MM/yyyy")
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<a class="btn btn-outline-secondary mt-3" asp-controller="Booking" asp-action="History">Về lịch sử vé</a>

@@ -1,0 +1,64 @@
+@model List<WEB_BTL.Domain.Entities.FoodCombo>
+@{
+    ViewData["Title"] = "Quản lý combo";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="cs-page-title mb-0">Combo bắp nước</h1>
+    <a asp-action="Create" class="btn btn-primary btn-sm">+ Thêm combo</a>
+</div>
+
+@if (TempData["Success"] is string successMsg)
+{
+    <div class="alert alert-success" role="status">@successMsg</div>
+}
+@if (TempData["Error"] is string errorMsg)
+{
+    <div class="alert alert-danger" role="alert">@errorMsg</div>
+}
+
+@if (Model.Count == 0)
+{
+    <p class="text-muted">Chưa có combo nào.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Tên combo</th>
+                    <th>Mô tả</th>
+                    <th class="text-end">Giá</th>
+                    <th>Trạng thái</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var combo in Model)
+                {
+                    <tr>
+                        <td>@combo.ComboId</td>
+                        <td>@combo.Name</td>
+                        <td class="text-muted small">@combo.Description</td>
+                        <td class="text-end">@combo.Price.ToString("N0") đ</td>
+                        <td>
+                            <span class="badge @(combo.IsAvailable ? "bg-success" : "bg-secondary")">
+                                @(combo.IsAvailable ? "Đang bán" : "Ngừng bán")
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-primary" asp-action="Edit"
+                               asp-route-id="@combo.ComboId">Sửa</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<p class="small text-muted">
+    Combo ngừng bán không xuất hiện khi khách chọn mua, nhưng đơn cũ vẫn giữ snapshot tên và giá lúc đặt.
+</p>

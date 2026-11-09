@@ -1,0 +1,72 @@
+@model List<WEB_BTL.Domain.Entities.Room>
+@{
+    ViewData["Title"] = "Quản lý phòng chiếu";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="cs-page-title mb-0">Phòng chiếu</h1>
+    <a asp-action="Create" class="btn btn-primary btn-sm">+ Thêm phòng</a>
+</div>
+
+@if (TempData["Success"] is string successMsg)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @successMsg
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] is string errorMsg)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @errorMsg
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Mã phòng</th>
+                <th>Tên phòng</th>
+                <th>Loại</th>
+                <th>Số ghế</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var room in Model)
+            {
+                <tr>
+                    <td>@room.RoomId</td>
+                    <td>@room.RoomName</td>
+                    <td>@room.RoomType</td>
+                    <td>@room.Seats.Count</td>
+                    <td>
+                        @if (room.IsActive)
+                        {
+                            <span class="badge bg-success">Hoạt động</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Ngưng</span>
+                        }
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a asp-action="Seats" asp-route-id="@room.RoomId" class="btn btn-outline-primary">Ghế</a>
+                            <a asp-action="Edit" asp-route-id="@room.RoomId" class="btn btn-outline-secondary">Sửa</a>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (Model.Count == 0)
+{
+    <p class="text-muted">Chưa có phòng chiếu nào.</p>
+}

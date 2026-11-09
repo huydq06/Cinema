@@ -1,0 +1,73 @@
+﻿@model BookingDto
+@{
+    ViewData["Title"] = "Thu tiền";
+    var startLocal = Model.ShowStartAtUtc.AddHours(7);
+}
+
+<h1 class="cs-page-title mb-3">Thu tiền — đơn @Model.BookingCode</h1>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-7">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h2 class="h5">@Model.MovieTitle</h2>
+                <p class="text-muted">@Model.RoomName · @startLocal.ToString("dd/MM/yyyy HH:mm")</p>
+                <p class="mb-1"><strong>Khách:</strong> @Model.ContactName
+                    @if (!string.IsNullOrEmpty(Model.ContactPhone)) { <span>(@Model.ContactPhone)</span> }</p>
+
+                <table class="table table-sm">
+                    <tbody>
+                        @foreach (var ticket in Model.Tickets)
+                        {
+                            <tr><td>Ghế @ticket.SeatCode</td><td>@ticket.SeatType</td><td class="text-end">@ticket.UnitPrice.ToString("N0") đ</td></tr>
+                        }
+                        @foreach (var combo in Model.Combos)
+                        {
+                            <tr><td>@combo.Name x @combo.Quantity</td><td>Combo</td><td class="text-end">@combo.LineTotal.ToString("N0") đ</td></tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr><th colspan="2">Tổng thu</th><th class="text-end">@Model.FinalAmount.ToString("N0") đ</th></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="alert alert-info">
+            Đơn tại quầy giữ ghế đến
+            <strong>@Model.ExpiresAtUtc.AddHours(7).ToString("HH:mm:ss")</strong>.
+        </div>
+
+        <div class="alert alert-warning"><strong>Tiền mặt:</strong> chỉ xác nhận sau khi đã nhận đủ tiền.</div>
+
+        <form asp-controller="Counter" asp-action="ConfirmCash" asp-route-bookingId="@Model.BookingId"
+              method="post" class="row g-2 align-items-end">
+            <div class="col-12 col-md-6">
+                <label for="amountReceived" class="form-label">Số tiền khách đưa (đối chiếu)</label>
+                <input id="amountReceived" name="amountReceived" type="number" min="0" step="1000"
+                       value="@Model.FinalAmount" class="form-control" />
+            </div>
+            <div class="col-12 col-md-6 d-flex gap-2">
+                <button type="submit" class="btn btn-success btn-lg flex-grow-1">Đã thu tiền</button>
+                <button type="submit" form="cancel-form" class="btn btn-outline-danger btn-lg">Hủy đơn</button>
+            </div>
+        </form>
+
+        <form id="cancel-form" asp-controller="Counter" asp-action="Cancel"
+              asp-route-bookingId="@Model.BookingId" method="post"></form>
+    </div>
+
+    <div class="col-12 col-lg-5">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h2 class="h6">Kiểm tra trước khi thu</h2>
+                <ul class="small mb-0">
+                    <li>Ghế: @string.Join(", ", Model.Tickets.Select(t => t.SeatCode))</li>
+                    <li>Trạng thái đơn: @Model.Status</li>
+                    <li>Kênh bán: @Model.Channel</li>
+                    <li>Tổng tiền: @Model.FinalAmount.ToString("N0") đ</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,102 @@
+﻿@model PagedResult<MovieListItemDto>
+@{
+    ViewData["Title"] = "Phim";
+    var genres = ViewData["Genres"] as IReadOnlyList<GenreItemDto> ?? [];
+    var keyword = ViewData["Keyword"] as string;
+    var genreId = ViewData["GenreId"] as int?;
+    var date = ViewData["Date"] as string;
+}
+
+<form method="get" asp-controller="Movies" asp-action="Index" class="row g-2 align-items-end mb-4">
+    <div class="col-12 col-md-4">
+        <label for="q" class="form-label small fw-semibold">Tên phim</label>
+        <input id="q" name="q" value="@keyword" class="form-control" placeholder="Tìm phim..." />
+    </div>
+    <div class="col-6 col-md-3">
+        <label for="genreId" class="form-label small fw-semibold">Thể loại</label>
+        <select id="genreId" name="genreId" class="form-select">
+            <option value="">Tất cả</option>
+            @foreach (var genre in genres)
+            {
+                if (genre.GenreId == genreId)
+                {
+                    <option value="@genre.GenreId" selected>@genre.Name</option>
+                }
+                else
+                {
+                    <option value="@genre.GenreId">@genre.Name</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-6 col-md-3">
+        <label for="date" class="form-label small fw-semibold">Ngày chiếu</label>
+        <input id="date" name="date" type="date" value="@date" class="form-control" />
+    </div>
+    <div class="col-12 col-md-2">
+        <button type="submit" class="cs-btn cs-btn-primary w-100">Tìm</button>
+    </div>
+</form>
+
+@if (Model.Items.Count == 0)
+{
+    <p class="text-muted py-4">Không có phim nào khớp điều kiện.</p>
+}
+else
+{
+    <h2 class="cs-section-title"><span>@(string.IsNullOrEmpty(keyword) && genreId is null && date is null ? "Tất cả phim" : "Kết quả tìm kiếm")</span></h2>
+
+    <div class="cs-movie-grid">
+        @foreach (var movie in Model.Items)
+        {
+            <a class="cs-movie-card" asp-controller="Movies" asp-action="Details" asp-route-slug="@movie.Slug">
+                <div class="cs-movie-poster-wrap">
+                    <img class="cs-movie-poster"
+                         src="@movie.PosterUrl"
+                         alt="@movie.Title"
+                         loading="lazy"
+                         onerror="this.src='/img/poster-placeholder.svg'" />
+                </div>
+                <div class="cs-movie-info">
+                    <h3 class="cs-movie-title">@movie.Title</h3>
+                    <div class="cs-movie-meta">
+                        <span class="cs-movie-badge @(movie.IsNowShowing ? "cs-badge-showing" : "cs-badge-upcoming")">
+                            @(movie.IsNowShowing ? "Đang chiếu" : "Sắp chiếu")
+                        </span>
+                        <span class="cs-movie-badge cs-badge-age">@movie.AgeRating</span>
+                        @movie.DurationMinutes phút
+                    </div>
+                </div>
+            </a>
+        }
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="cs-pagination" aria-label="Phân trang">
+            @if (Model.HasPrevious)
+            {
+                <a class="cs-page-btn"
+                   asp-controller="Movies" asp-action="Index"
+                   asp-route-page="@(Model.Page-1)" asp-route-q="@keyword"
+                   asp-route-genreId="@genreId" asp-route-date="@date">← Trước</a>
+            }
+            else
+            {
+                <span class="cs-page-btn disabled" aria-disabled="true">← Trước</span>
+            }
+            <span class="cs-page-info">@Model.Page / @Model.TotalPages</span>
+            @if (Model.HasNext)
+            {
+                <a class="cs-page-btn"
+                   asp-controller="Movies" asp-action="Index"
+                   asp-route-page="@(Model.Page+1)" asp-route-q="@keyword"
+                   asp-route-genreId="@genreId" asp-route-date="@date">Sau →</a>
+            }
+            else
+            {
+                <span class="cs-page-btn disabled" aria-disabled="true">Sau →</span>
+            }
+        </nav>
+    }
+}

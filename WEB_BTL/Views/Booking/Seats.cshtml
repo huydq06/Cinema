@@ -1,0 +1,297 @@
+﻿@model SeatMapDto
+@{
+    ViewData["Title"] = "Chọn ghế";
+    var combos = ViewData["Combos"] as IReadOnlyList<ComboOptionDto> ?? [];
+    var maxSeats = ViewData["MaxSeats"] as int? ?? 8;
+    var rows = Model.Seats.GroupBy(s => s.Row).OrderBy(g => g.Key);
+    var startLocal = Model.StartAtUtc.AddHours(7);
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
+    <div>
+        <h1 class="cs-page-title mb-1">@Model.MovieTitle</h1>
+        <p class="text-muted mb-0">
+            @Model.RoomName · @startLocal.ToString("dd/MM/yyyy HH:mm") · @Model.BasePrice.ToString("N0") đ/ghế thường
+        </p>
+    </div>
+    <div class="text-end">
+        <div class="small text-muted">Ghế đã chọn</div>
+        <div id="selected-count" class="h5 mb-0">0/@maxSeats</div>
+    </div>
+</div>
+
+<div id="seat-alert" class="alert alert-warning d-none" role="alert"></div>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger" role="alert">
+        <div asp-validation-summary="ModelOnly"></div>
+    </div>
+}
+
+<div class="seat-screen mb-3">MÀN HÌNH</div>
+
+<div class="seat-map mb-4" id="seat-map" aria-label="Sơ đồ ghế">
+    @foreach (var row in rows)
+    {
+        <div class="seat-row">
+            <span class="seat-row-label" aria-hidden="true">@((char)('A' + row.Key - 1))</span>
+            @foreach (var seat in row.OrderBy(s => s.Column))
+            {
+                var isAvailable = seat.State == nameof(ShowtimeSeatState.Available);
+                var cssState = seat.State.ToLowerInvariant();
+                <button type="button"
+                        class="seat seat-@cssState @(seat.SeatType == "VIP" ? "seat-vip" : "")"
+                        data-seat-id="@seat.SeatId"
+                        data-seat-code="@seat.SeatCode"
+                        data-seat-type="@seat.SeatType"
+                        data-price="@seat.Price"
+                        data-state="@seat.State"
+                        disabled="@(!isAvailable)"
+                        aria-label="Ghế @seat.SeatCode, @seat.SeatType, @seat.State, @seat.Price.ToString("N0") đồng"
+                        aria-pressed="false"
+                        title="@seat.SeatCode · @seat.SeatType · @seat.Price.ToString("N0") đ">
+                    @seat.SeatCode
+                </button>
+            }
+        </div>
+    }
+</div>
+
+<div class="d-flex flex-wrap gap-3 small text-muted mb-4" aria-label="Chú thích">
+    <span><span class="seat-legend seat-available"></span> Trống</span>
+    <span><span class="seat-legend seat-held"></span> Đang giữ</span>
+    <span><span class="seat-legend seat-sold"></span> Đã bán</span>
+    <span><span class="seat-legend seat-blocked"></span> Bảo trì</span>
+    <span><span class="seat-legend seat-vip"></span> Ghế VIP (phụ thu)</span>
+</div>
+
+<form id="booking-form" asp-controller="Booking" asp-action="Create"
+      asp-route-showtimeId="@Model.ShowtimeId" method="post">
+    @Html.AntiForgeryToken()
+    <div id="hidden-seats"></div>
+    <div id="hidden-combos"></div>
+
+    @if (combos.Count > 0)
+    {
+        <h2 class="h6">Combo bắp nước</h2>
+        <div class="row g-2 mb-3">
+            @for (var i = 0; i < combos.Count; i++)
+            {
+                var combo = combos[i];
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="border rounded p-2 d-flex justify-content-between align-items-center gap-2">
+                        <div>
+                            <div class="fw-semibold">@combo.Name</div>
+                            <div class="small text-muted">@combo.Description</div>
+                            <div class="small">@combo.Price.ToString("N0") đ</div>
+                        </div>
+                        <input type="number" class="form-control form-control-sm combo-qty"
+                               style="max-width:80px" min="0" max="10" value="0"
+                               data-combo-id="@combo.ComboId"
+                               aria-label="Số lượng @combo.Name" />
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="card bg-light mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between"><span>Ghế (<span id="seat-count">0</span>)</span><span id="seat-total">0 đ</span></div>
+            <div class="d-flex justify-content-between"><span>Combo</span><span id="combo-total">0 đ</span></div>
+            <hr class="my-2" />
+            <div class="d-flex justify-content-between h5 mb-0"><span>Tạm tính</span><span id="grand-total">0 đ</span></div>
+        </div>
+    </div>
+
+    <p class="small text-muted">
+        Ghế được giữ <strong>10 phút</strong> sau khi tạo đơn. Giá chỉ được chốt ở server khi giữ ghế.
+    </p>
+
+    <button type="submit" class="btn btn-primary btn-lg w-100" id="submit-booking" disabled>
+        Giữ ghế và thanh toán
+    </button>
+</form>
+
+@section Scripts {
+    <script>
+        (function () {
+            const maxSeats = @maxSeats;
+            const showtimeId = @Model.ShowtimeId;
+            const selected = new Map();
+            const form = document.getElementById('booking-form');
+            const map = document.getElementById('seat-map');
+            const alertBox = document.getElementById('seat-alert');
+            const submitBtn = document.getElementById('submit-booking');
+            const vnd = new Intl.NumberFormat('vi-VN');
+
+            function showAlert(message) {
+                alertBox.textContent = message;
+                alertBox.classList.remove('d-none');
+            }
+
+            function clearAlert() {
+                alertBox.classList.add('d-none');
+            }
+
+            function seatButton(id) {
+                return map.querySelector(`.seat[data-seat-id="${id}"]`);
+            }
+
+            function recompute() {
+                let seatTotal = 0;
+                selected.forEach(price => seatTotal += price);
+
+                let comboTotal = 0;
+                document.querySelectorAll('.combo-qty').forEach(input => {
+                    const qty = parseInt(input.value, 10) || 0;
+                    const price = parseFloat(input.closest('.border').querySelector('.small:last-child').textContent.replace(/[^\d]/g, '')) || 0;
+                    comboTotal += qty * price;
+                });
+
+                document.getElementById('seat-count').textContent = selected.size;
+                document.getElementById('selected-count').textContent = `${selected.size}/${maxSeats}`;
+                document.getElementById('seat-total').textContent = `${vnd.format(seatTotal)} đ`;
+                document.getElementById('combo-total').textContent = `${vnd.format(comboTotal)} đ`;
+                document.getElementById('grand-total').textContent = `${vnd.format(seatTotal + comboTotal)} đ`;
+                submitBtn.disabled = selected.size === 0;
+            }
+
+            map.addEventListener('click', event => {
+                const button = event.target.closest('.seat');
+                if (!button || button.disabled) return;
+
+                const id = button.dataset.seatId;
+                if (selected.has(id)) {
+                    selected.delete(id);
+                    button.classList.remove('seat-selected');
+                    button.setAttribute('aria-pressed', 'false');
+                } else {
+                    if (selected.size >= maxSeats) {
+                        showAlert(`Mỗi đơn tối đa ${maxSeats} ghế.`);
+                        return;
+                    }
+                    selected.set(id, parseFloat(button.dataset.price));
+                    button.classList.add('seat-selected');
+                    button.setAttribute('aria-pressed', 'true');
+                }
+                clearAlert();
+                recompute();
+            });
+
+            document.querySelectorAll('.combo-qty').forEach(input => {
+                input.addEventListener('input', () => {
+                    let qty = parseInt(input.value, 10) || 0;
+                    qty = Math.min(Math.max(qty, 0), 10);
+                    input.value = qty;
+                    recompute();
+                });
+            });
+
+            form.addEventListener('submit', event => {
+                if (selected.size === 0) {
+                    event.preventDefault();
+                    return;
+                }
+
+                const seatsHost = document.getElementById('hidden-seats');
+                seatsHost.innerHTML = '';
+                [...selected.keys()].forEach((id, index) => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = `SeatIds[${index}]`;
+                    input.value = id;
+                    seatsHost.appendChild(input);
+                });
+
+                const comboHost = document.getElementById('hidden-combos');
+                comboHost.innerHTML = '';
+                let index = 0;
+                document.querySelectorAll('.combo-qty').forEach(input => {
+                    const qty = parseInt(input.value, 10) || 0;
+                    if (qty <= 0) return;
+
+                    const idInput = document.createElement('input');
+                    idInput.type = 'hidden';
+                    idInput.name = `Combos[${index}].ComboId`;
+                    idInput.value = input.dataset.comboId;
+
+                    const qtyInput = document.createElement('input');
+                    qtyInput.type = 'hidden';
+                    qtyInput.name = `Combos[${index}].Quantity`;
+                    qtyInput.value = qty;
+
+                    comboHost.append(idInput, qtyInput);
+                    index += 1;
+                });
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Đang giữ ghế...';
+            });
+
+            // Đồng bộ sơ đồ khi tab đang mở; không poll khi tab ẩn.
+            let timer = null;
+            async function refresh() {
+                if (document.visibilityState !== 'visible') return;
+                try {
+                    const response = await fetch(`/api/showtimes/${showtimeId}/seats`, {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (!response.ok) return;
+
+                    const data = await response.json();
+                    let removed = 0;
+                    data.seats.forEach(seat => {
+                        const button = seatButton(seat.seatId);
+                        if (!button) return;
+
+                        const key = String(seat.seatId);
+                        const wasSelected = selected.has(key);
+                        const available = seat.state === 'Available';
+
+                        if (wasSelected && !available) {
+                            selected.delete(key);
+                            button.classList.remove('seat-selected');
+                            removed += 1;
+                        }
+
+                        button.dataset.state = seat.state;
+                        button.disabled = !available;
+                        button.classList.remove('seat-available', 'seat-held', 'seat-sold', 'seat-blocked');
+                        button.classList.add(`seat-${seat.state.toLowerCase()}`);
+                    });
+
+                    if (removed > 0) {
+                        showAlert(`${removed} ghế bạn chọn vừa được người khác giữ. Vui lòng chọn ghế khác.`);
+                        recompute();
+                    }
+                } catch {
+                    // Lỗi mạng tạm thời: giữ nguyên trạng thái hiển thị, vòng sau sẽ thử lại.
+                }
+            }
+
+            function startPolling() {
+                if (timer) return;
+                timer = setInterval(refresh, 5000);
+            }
+
+            function stopPolling() {
+                clearInterval(timer);
+                timer = null;
+            }
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    refresh();
+                    startPolling();
+                } else {
+                    stopPolling();
+                }
+            });
+
+            recompute();
+            startPolling();
+        })();
+    </script>
+}

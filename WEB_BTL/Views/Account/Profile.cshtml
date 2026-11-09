@@ -1,0 +1,22 @@
+﻿@model CurrentUserDto
+@{
+    ViewData["Title"] = "Tài khoản";
+}
+
+<h1 class="cs-page-title mb-3">Tài khoản của tôi</h1>
+
+<dl class="row">
+    <dt class="col-sm-3">Họ tên</dt>
+    <dd class="col-sm-9">@Model.FullName</dd>
+
+    <dt class="col-sm-3">Email</dt>
+    <dd class="col-sm-9">@Model.Email</dd>
+
+    <dt class="col-sm-3">Vai trò</dt>
+    <dd class="col-sm-9">@Model.Role</dd>
+</dl>
+
+<div class="d-flex gap-2">
+    <a class="btn btn-outline-primary" asp-controller="Account" asp-action="ChangePassword">Đổi mật khẩu</a>
+    <a class="btn btn-outline-secondary" asp-controller="Booking" asp-action="History">Lịch sử vé</a>
+</div>

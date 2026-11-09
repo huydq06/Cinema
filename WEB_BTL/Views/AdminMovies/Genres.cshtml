@@ -1,0 +1,64 @@
+﻿@model IReadOnlyList<WEB_BTL.Domain.Entities.Genre>
+@{
+    ViewData["Title"] = "Thể loại";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="cs-page-title mb-0">Thể loại</h1>
+    <a class="btn btn-link px-0" asp-controller="AdminMovies" asp-action="Index">Quay lại danh sách phim</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-6">
+        <h2 class="h6">Danh sách</h2>
+        @if (Model.Count == 0)
+        {
+            <p class="text-muted">Chưa có thể loại nào.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead><tr><th>#</th><th>Tên</th><th>Slug</th><th>Hoạt động</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var genre in Model)
+                        {
+                            <tr>
+                                <form asp-controller="AdminMovies" asp-action="UpdateGenre" asp-route-id="@genre.GenreId" method="post">
+                                    <td>@genre.GenreId</td>
+                                    <td><input name="name" value="@genre.Name" class="form-control form-control-sm" required maxlength="100" /></td>
+                                    <td><code>@genre.Slug</code></td>
+                                    <td>
+                                        <input type="checkbox" name="isActive" value="true" class="form-check-input"
+                                               checked="@genre.IsActive" aria-label="Đang hoạt động" />
+                                    </td>
+                                    <td class="text-end">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Lưu</button>
+                                    </td>
+                                </form>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <h2 class="h6">Thêm thể loại</h2>
+        <form asp-controller="AdminMovies" asp-action="CreateGenre" method="post" class="row g-2">
+            <div class="col-12 col-md-6">
+                <label for="name" class="form-label">Tên</label>
+                <input id="name" name="name" class="form-control" required maxlength="100" />
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="slug" class="form-label">Slug</label>
+                <input id="slug" name="slug" class="form-control" required maxlength="120"
+                       pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$" />
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Thêm</button>
+            </div>
+        </form>
+    </div>
+</div>

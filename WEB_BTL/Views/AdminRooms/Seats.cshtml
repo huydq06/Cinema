@@ -1,0 +1,102 @@
+@model List<WEB_BTL.Domain.Entities.Seat>
+@{
+    ViewData["Title"] = "Quản lý ghế";
+    var roomId = (int)ViewData["RoomId"]!;
+    var roomName = (string)ViewData["RoomName"]!;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="cs-page-title mb-0">Ghế - @roomName</h1>
+    <a asp-action="Edit" asp-route-id="@roomId" class="btn btn-outline-secondary btn-sm">← Quay lại phòng</a>
+</div>
+
+@if (TempData["Success"] is string successMsg)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @successMsg
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] is string errorMsg)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @errorMsg
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h2 class="h6 card-title">Thêm ghế mới</h2>
+        <form asp-action="CreateSeat" asp-route-id="@roomId" method="post" class="row g-2">
+            <div class="col-auto">
+                <input type="text" name="SeatCode" class="form-control form-control-sm" placeholder="A1" required maxlength="10" />
+            </div>
+            <div class="col-auto">
+                <input type="number" name="RowIndex" class="form-control form-control-sm" placeholder="Hàng" min="1" max="50" required />
+            </div>
+            <div class="col-auto">
+                <input type="number" name="ColIndex" class="form-control form-control-sm" placeholder="Cột" min="1" max="50" required />
+            </div>
+            <div class="col-auto">
+                <select name="SeatType" class="form-select form-select-sm" asp-items="Html.GetEnumSelectList<WEB_BTL.Domain.Enums.SeatType>()"></select>
+            </div>
+            <div class="col-auto">
+                <input type="number" name="PriceSurcharge" class="form-control form-control-sm" placeholder="Phụ phí" min="0" step="1000" value="0" />
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary btn-sm">Thêm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-sm table-hover">
+        <thead>
+            <tr>
+                <th>Mã ghế</th>
+                <th>Hàng</th>
+                <th>Cột</th>
+                <th>Loại</th>
+                <th>Phụ phí</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var seat in Model)
+            {
+                <tr>
+                    <td><strong>@seat.SeatCode</strong></td>
+                    <td>@seat.RowIndex</td>
+                    <td>@seat.ColIndex</td>
+                    <td>@seat.SeatType</td>
+                    <td>@seat.PriceSurcharge.ToString("N0") đ</td>
+                    <td>
+                        @if (seat.IsActive)
+                        {
+                            <span class="badge bg-success">Hoạt động</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Ngưng</span>
+                        }
+                    </td>
+                    <td>
+                        <form asp-action="DeleteSeat" asp-route-roomId="@roomId" asp-route-seatId="@seat.SeatId" method="post" class="d-inline"
+                              onsubmit="return confirm('Xóa ghế @seat.SeatCode?')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (Model.Count == 0)
+{
+    <p class="text-muted">Chưa có ghế nào. Thêm ghế bằng form bên trên.</p>
+}

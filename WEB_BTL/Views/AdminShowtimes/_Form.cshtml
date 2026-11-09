@@ -1,0 +1,74 @@
+﻿@model ShowtimeFormInput
+@{
+    ViewData["Title"] = ViewData["FormTitle"] as string ?? "Suất chiếu";
+    var movies = ViewData["Movies"] as Microsoft.AspNetCore.Mvc.Rendering.SelectList;
+    var rooms = ViewData["Rooms"] as Microsoft.AspNetCore.Mvc.Rendering.SelectList;
+    var isEdit = ViewData["IsEdit"] as bool? ?? false;
+    var action = isEdit ? "Edit" : "Create";
+    var id = ViewData["ShowtimeId"];
+}
+
+<h1 class="cs-page-title mb-3">@ViewData["Title"]</h1>
+
+<form asp-controller="AdminShowtimes" asp-action="@action" asp-route-id="@id" method="post" novalidate>
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            <label asp-for="MovieId" class="form-label">Phim</label>
+            <select asp-for="MovieId" asp-items="movies" class="form-select">
+                <option value="">— Chọn phim —</option>
+            </select>
+            <span asp-validation-for="MovieId" class="text-danger small"></span>
+        </div>
+
+        <div class="col-12 col-md-6">
+            <label asp-for="RoomId" class="form-label">Phòng</label>
+            <select asp-for="RoomId" asp-items="rooms" class="form-select">
+                <option value="">— Chọn phòng —</option>
+            </select>
+            <span asp-validation-for="RoomId" class="text-danger small"></span>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <label asp-for="StartAtLocal" class="form-label">Bắt đầu (giờ Việt Nam)</label>
+            <input asp-for="StartAtLocal" class="form-control" type="datetime-local" />
+            <span asp-validation-for="StartAtLocal" class="text-danger small"></span>
+        </div>
+
+        <div class="col-6 col-md-4">
+            <label asp-for="BasePrice" class="form-label">Giá gốc (VND)</label>
+            <input asp-for="BasePrice" class="form-control" type="number" min="0" step="1000" />
+            <span asp-validation-for="BasePrice" class="text-danger small"></span>
+        </div>
+
+        <div class="col-6 col-md-4">
+            <label asp-for="CleaningMinutes" class="form-label">Dọn phòng (phút)</label>
+            <input asp-for="CleaningMinutes" class="form-control" type="number" min="0" max="60" />
+            <span asp-validation-for="CleaningMinutes" class="text-danger small"></span>
+        </div>
+
+        <div class="col-12">
+            <div class="form-check">
+                <input asp-for="PublishImmediately" class="form-check-input" />
+                <label asp-for="PublishImmediately" class="form-check-label">
+                    Mở bán ngay (tạo snapshot ghế). Bỏ chọn để lưu Draft và mở bán sau.
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Lưu</button>
+        <a class="btn btn-outline-secondary" asp-controller="AdminShowtimes" asp-action="Index">Hủy</a>
+    </div>
+</form>
+
+<p class="small text-muted mt-3">
+    Hệ thống kiểm tra trùng lịch theo khoảng [bắt đầu, kết thúc + dọn phòng) và khóa phòng trong transaction,
+    nên hai người lưu cùng lúc không thể tạo lịch chồng nhau.
+</p>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

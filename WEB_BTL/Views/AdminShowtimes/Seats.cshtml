@@ -1,0 +1,78 @@
+﻿@model IReadOnlyList<WEB_BTL.Domain.Entities.ShowtimeSeat>
+@{
+    ViewData["Title"] = "Ghế của suất chiếu";
+    var showtime = ViewData["Showtime"] as WEB_BTL.Domain.Entities.Showtime;
+    var rows = Model.GroupBy(s => s.RowIndexSnapshot).OrderBy(g => g.Key);
+}
+
+<h1 class="cs-page-title mb-1">Ghế — suất #@showtime?.ShowtimeId</h1>
+<p class="text-muted">
+    @showtime?.Movie?.Title · @showtime?.Room?.RoomName ·
+    @showtime?.StartAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm")
+</p>
+
+<div class="d-flex flex-wrap gap-3 small text-muted mb-3" aria-label="Chú thích">
+    <span><span class="seat-legend seat-available"></span> Trống</span>
+    <span><span class="seat-legend seat-held"></span> Đang giữ</span>
+    <span><span class="seat-legend seat-sold"></span> Đã bán</span>
+    <span><span class="seat-legend seat-blocked"></span> Bảo trì</span>
+</div>
+
+<form asp-controller="AdminShowtimes" asp-action="Seats" asp-route-id="@showtime?.ShowtimeId" method="post">
+    <div class="seat-map mb-3">
+        @foreach (var row in rows)
+        {
+            <div class="seat-row">
+                <span class="seat-row-label" aria-hidden="true">@((char)('A' + row.Key - 1))</span>
+                @foreach (var seat in row.OrderBy(s => s.ColIndexSnapshot))
+                {
+                    var selectable = seat.State is ShowtimeSeatState.Available or ShowtimeSeatState.Blocked;
+                    <label class="seat seat-@seat.State.ToString().ToLowerInvariant() @(seat.SeatTypeSnapshot == "VIP" ? "seat-vip" : "") @(selectable ? "seat-selectable" : "seat-disabled")"
+                           title="@seat.SeatCodeSnapshot · @seat.SeatTypeSnapshot · @seat.Price.ToString("N0") đ">
+                        @if (selectable)
+                        {
+                            <input type="checkbox" name="seatIds" value="@seat.SeatId" class="visually-hidden" />
+                        }
+                        @seat.SeatCodeSnapshot
+                    </label>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" name="action" value="block" class="btn btn-outline-danger">
+            Chặn ghế đã chọn
+        </button>
+        <button type="submit" name="action" value="unblock" class="btn btn-outline-success">
+            Mở lại ghế bảo trì
+        </button>
+        <a class="btn btn-outline-secondary" asp-controller="AdminShowtimes" asp-action="Index">Quay lại</a>
+    </div>
+</form>
+
+<p class="small text-muted mt-3">
+    Chỉ đổi được trạng thái Available ↔ Blocked và chỉ với suất đã mở bán.
+    Ghế đang Held/Sold không chặn được để tránh làm sai dữ liệu đơn.
+</p>
+
+@section Scripts {
+    <script>
+        (function () {
+            document.querySelectorAll('label.seat-selectable').forEach(label => {
+                const box = label.querySelector('input[type="checkbox"]');
+                if (!box) return;
+
+                label.addEventListener('click', event => {
+                    if (event.target !== box) {
+                        box.checked = !box.checked;
+                        event.preventDefault();
+                    }
+                });
+
+                label.classList.toggle('seat-selected', box.checked);
+                box.addEventListener('change', () => label.classList.toggle('seat-selected', box.checked));
+            });
+        })();
+    </script>
+}

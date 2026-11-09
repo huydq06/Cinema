@@ -1,0 +1,136 @@
+﻿@{
+    var success = TempData["Success"] as string;
+    var error = TempData["Error"] as string;
+    var currentPath = Context.Request.Path.Value ?? "";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — Cinestar</title>
+    <script type="importmap"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/WEB_BTL.styles.css" asp-append-version="true" />
+</head>
+<body>
+<header>
+    <nav class="cs-navbar">
+        <div class="container">
+            <a class="cs-navbar-brand" asp-controller="Home" asp-action="Index">CINESTAR</a>
+
+            <button class="cs-toggler d-md-none" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#navMain"
+                    aria-expanded="false" aria-label="Mở menu">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="2" y1="5" x2="18" y2="5"/>
+                    <line x1="2" y1="10" x2="18" y2="10"/>
+                    <line x1="2" y1="15" x2="18" y2="15"/>
+                </svg>
+            </button>
+
+            <div class="collapse d-md-flex align-items-stretch flex-grow-1" id="navMain">
+                <div class="d-flex flex-column flex-md-row align-items-start align-items-md-stretch flex-grow-1">
+                    <a class="cs-nav-link @(currentPath.StartsWith("/phim") ? "active" : "")"
+                       asp-controller="Movies" asp-action="Index">Phim</a>
+                    <a class="cs-nav-link @(currentPath == "/gioi-thieu" ? "active" : "")"
+                       asp-controller="About" asp-action="Index">Giới thiệu</a>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <a class="cs-nav-link @(currentPath.StartsWith("/dat-ve") ? "active" : "")"
+                           asp-controller="Booking" asp-action="History">Vé của tôi</a>
+                    }
+                    @if (User.IsInRole(Roles.Staff) || User.IsInRole(Roles.Admin))
+                    {
+                        <a class="cs-nav-link" asp-controller="CheckIn" asp-action="Index">Soát vé</a>
+                    }
+                    @if (User.IsInRole(Roles.Admin))
+                    {
+                        <a class="cs-nav-link" asp-controller="Dashboard" asp-action="Index">Quản trị</a>
+                    }
+
+                    <div class="cs-nav-right d-flex align-items-center ms-auto py-2 py-md-0">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <a class="cs-nav-link" asp-controller="Account" asp-action="Profile">@User.Identity.Name</a>
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                <button type="submit" class="cs-btn-login" style="background:transparent;border:1.5px solid #E0E0E0;color:#111;font-weight:500;font-size:0.85rem;padding:0.4rem 1rem;border-radius:2px;cursor:pointer;">
+                                    Đăng xuất
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <a class="cs-nav-link" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                            <a class="cs-btn-login" asp-controller="Account" asp-action="Register">Đăng ký</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main class="cs-main" role="main">
+    @if (!string.IsNullOrEmpty(success) || !string.IsNullOrEmpty(error))
+    {
+        <div class="container">
+            @if (!string.IsNullOrEmpty(success))
+            {
+                <div class="cs-alert cs-alert-success mt-3" role="status">@success</div>
+            }
+            @if (!string.IsNullOrEmpty(error))
+            {
+                <div class="cs-alert cs-alert-danger mt-3" role="alert">@error</div>
+            }
+        </div>
+    }
+    @if (ViewData["FullWidth"] is true)
+    {
+        @RenderBody()
+    }
+    else
+    {
+        <div class="container pt-3">
+            @RenderBody()
+        </div>
+    }
+</main>
+
+<footer class="cs-footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 col-md-4 mb-3 mb-md-0">
+                <div class="cs-footer-brand">CINESTAR</div>
+                <div class="cs-footer-tagline">Rạp chiếu phim hiện đại tại Đà Nẵng</div>
+                <div class="cs-footer-links">
+                    <a asp-controller="About" asp-action="Index">Giới thiệu</a>
+                    <a asp-controller="Movies" asp-action="Index">Lịch chiếu</a>
+                </div>
+            </div>
+            <div class="col-12 col-md-4 mb-3 mb-md-0">
+                <div style="font-weight:600;color:#aaa;margin-bottom:0.5rem;font-size:0.82rem;">Liên hệ</div>
+                <div>123 Nguyễn Văn Linh, Đà Nẵng</div>
+                <div>hotline@cinestar.vn</div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div style="font-weight:600;color:#aaa;margin-bottom:0.5rem;font-size:0.82rem;">Giờ mở cửa</div>
+                <div>Hàng ngày 9:00 — 23:00</div>
+                <div>Cuối tuần 8:30 — 23:30</div>
+            </div>
+        </div>
+        <div class="cs-footer-copy">
+            &copy; 2026 Cinestar. Dữ liệu phim từ <a href="https://www.themoviedb.org" target="_blank" rel="noopener" style="color:#555;">TMDB</a>.
+        </div>
+    </div>
+</footer>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

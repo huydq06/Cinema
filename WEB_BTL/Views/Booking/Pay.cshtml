@@ -1,0 +1,130 @@
+﻿@model PaymentPageViewModel
+@{
+    ViewData["Title"] = "Thanh toán";
+    var booking = Model.Booking;
+    var status = Model.Status;
+    var startLocal = booking.ShowStartAtUtc.AddHours(7);
+    var isPending = booking.Status == nameof(BookingStatus.PendingPayment);
+    var expiresIn = (int)Math.Max(0, (booking.ExpiresAtUtc - DateTime.UtcNow).TotalSeconds);
+}
+
+<h1 class="cs-page-title mb-3">Thanh toán đơn @booking.BookingCode</h1>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-7">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h2 class="h5">@booking.MovieTitle</h2>
+                <p class="text-muted mb-3">@booking.RoomName · @startLocal.ToString("dd/MM/yyyy HH:mm")</p>
+
+                <table class="table table-sm">
+                    <thead>
+                        <tr><th>Ghế</th><th>Loại</th><th class="text-end">Giá</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var ticket in booking.Tickets)
+                        {
+                            <tr>
+                                <td>@ticket.SeatCode</td>
+                                <td>@ticket.SeatType</td>
+                                <td class="text-end">@ticket.UnitPrice.ToString("N0") đ</td>
+                            </tr>
+                        }
+                        @foreach (var combo in booking.Combos)
+                        {
+                            <tr>
+                                <td>@combo.Name x @combo.Quantity</td>
+                                <td>Combo</td>
+                                <td class="text-end">@combo.LineTotal.ToString("N0") đ</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="2">Tổng tiền</th>
+                            <th class="text-end">@booking.FinalAmount.ToString("N0") đ</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        @if (isPending)
+        {
+            <div class="alert alert-info">
+                Ghế được giữ đến
+                <strong><span id="countdown">@TimeSpan.FromSeconds(expiresIn).ToString(@"mm\:ss")</span></strong>.
+                Hết hạn, đơn tự hủy và ghế được mở lại.
+            </div>
+
+            <div class="alert alert-warning">
+                <strong>Thanh toán mô phỏng:</strong> đây không phải cổng thanh toán thật, không phát sinh giao dịch tiền.
+            </div>
+
+            <form asp-controller="Booking" asp-action="StartPayment" asp-route-bookingId="@booking.BookingId"
+                  method="post" class="d-flex gap-2 flex-wrap">
+                <button type="submit" class="btn btn-primary btn-lg">Thanh toán mô phỏng</button>
+
+                <button type="submit" form="cancel-form" class="btn btn-outline-danger btn-lg">Hủy đơn</button>
+            </form>
+
+            <form id="cancel-form" asp-controller="Booking" asp-action="Cancel"
+                  asp-route-bookingId="@booking.BookingId" method="post">
+                <input type="hidden" name="reason" value="Khách hủy" />
+            </form>
+        }
+        else if (booking.Status == nameof(BookingStatus.Confirmed))
+        {
+            <div class="alert alert-success">Đơn đã được xác nhận thanh toán. Vé điện tử đã phát hành.</div>
+            <a class="btn btn-primary" asp-controller="Booking" asp-action="Ticket"
+               asp-route-bookingId="@booking.BookingId">Xem vé điện tử</a>
+        }
+        else
+        {
+            <div class="alert alert-secondary">Đơn ở trạng thái @booking.Status và không thể thanh toán.</div>
+            <a class="btn btn-outline-primary" asp-controller="Movies" asp-action="Index">Chọn phim khác</a>
+        }
+    </div>
+
+    <div class="col-12 col-lg-5">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h2 class="h6">Thông tin đơn</h2>
+                <dl class="small mb-0">
+                    <dt>Mã đơn</dt><dd>@booking.BookingCode</dd>
+                    <dt>Người nhận</dt><dd>@booking.ContactName</dd>
+                    <dt>Email</dt><dd>@booking.ContactEmail</dd>
+                    <dt>Trạng thái đơn</dt><dd>@booking.Status</dd>
+                    <dt>Trạng thái thanh toán</dt><dd>@(status?.PaymentStatus ?? "Chưa có")</dd>
+                    <dt>Hết hạn giữ ghế</dt><dd>@booking.ExpiresAtUtc.AddHours(7).ToString("HH:mm:ss dd/MM/yyyy")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @if (isPending)
+    {
+        <script>
+            (function () {
+                let remaining = @expiresIn;
+                const target = document.getElementById('countdown');
+                if (!target || remaining <= 0) return;
+
+                const timer = setInterval(() => {
+                    remaining -= 1;
+                    if (remaining <= 0) {
+                        clearInterval(timer);
+                        target.textContent = '00:00';
+                        location.reload();
+                        return;
+                    }
+                    const minutes = String(Math.floor(remaining / 60)).padStart(2, '0');
+                    const seconds = String(remaining % 60).padStart(2, '0');
+                    target.textContent = `${minutes}:${seconds}`;
+                }, 1000);
+            })();
+        </script>
+    }
+}

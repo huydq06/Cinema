@@ -1,0 +1,68 @@
+﻿@model DashboardStatsDto
+@{
+    ViewData["Title"] = "Quản trị";
+}
+
+<h1 class="cs-page-title mb-3">Bảng điều khiển</h1>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Suất sắp chiếu (7 ngày)</div>
+            <div class="cs-page-title mb-0">@Model.UpcomingShowtimes</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Đơn tạo hôm nay</div>
+            <div class="cs-page-title mb-0">@Model.TodayBookings</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Đơn đang chờ thanh toán</div>
+            <div class="cs-page-title mb-0">@Model.PendingPayments</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Thực thu hôm nay</div>
+            <div class="cs-page-title mb-0">@Model.TodayCaptured.ToString("N0") đ</div>
+        </div></div>
+    </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2 mb-4">
+    <a class="btn btn-outline-primary" asp-controller="AdminMovies" asp-action="Index">Quản lý phim</a>
+    <a class="btn btn-outline-primary" asp-controller="AdminShowtimes" asp-action="Index">Quản lý suất chiếu</a>
+    <a class="btn btn-outline-primary" asp-controller="AdminUsers" asp-action="Index">Người dùng</a>
+    <a class="btn btn-outline-primary" asp-controller="Reports" asp-action="Revenue">Báo cáo doanh thu</a>
+    <a class="btn btn-outline-secondary" asp-controller="Counter" asp-action="Index">Quầy bán vé</a>
+    <a class="btn btn-outline-secondary" asp-controller="AdminSync" asp-action="Index">Đồng bộ TMDB</a>
+</div>
+
+<h2 class="h6">Suất chiếu hôm nay</h2>
+@if (Model.TodayShowtimes.Count == 0)
+{
+    <p class="text-muted">Không có suất chiếu hôm nay.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm">
+            <thead><tr><th>Giờ</th><th>Phim</th><th>Phòng</th><th>Đã bán/giữ</th><th>Trạng thái</th></tr></thead>
+            <tbody>
+                @foreach (var slot in Model.TodayShowtimes)
+                {
+                    <tr>
+                        <td>@slot.StartAtUtc.AddHours(7).ToString("HH:mm")</td>
+                        <td>@slot.MovieTitle</td>
+                        <td>@slot.RoomName</td>
+                        <td>@slot.SoldSeats/@slot.TotalSeats</td>
+                        <td>@slot.Status</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

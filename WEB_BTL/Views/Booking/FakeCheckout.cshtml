@@ -1,0 +1,47 @@
+﻿@model FakeCheckoutDto
+@{
+    ViewData["Title"] = "Cổng thanh toán mô phỏng";
+    var reference = ViewData["Reference"] as string ?? Model.Reference;
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-7">
+        <div class="alert alert-warning">
+            <strong>Đây là cổng thanh toán mô phỏng.</strong>
+            Không có giao dịch thật nào được thực hiện. Callback được ký bằng secret phía server
+            và đi đúng luồng xác minh chữ ký, idempotency như cổng thật.
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h1 class="h5">Thanh toán đơn @Model.Status.BookingCode</h1>
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Mã tham chiếu</dt>
+                    <dd class="col-sm-7"><code>@reference</code></dd>
+
+                    <dt class="col-sm-5">Số tiền</dt>
+                    <dd class="col-sm-7">@Model.Status.FinalAmount.ToString("N0") đồng</dd>
+
+                    <dt class="col-sm-5">Trạng thái đơn</dt>
+                    <dd class="col-sm-7">@Model.Status.BookingStatus</dd>
+
+                    <dt class="col-sm-5">Trạng thái giao dịch</dt>
+                    <dd class="col-sm-7">@Model.Status.PaymentStatus</dd>
+                </dl>
+            </div>
+        </div>
+
+        <details class="mb-3">
+            <summary class="small text-muted">Xem payload và chữ ký mô phỏng</summary>
+            <pre class="small bg-light p-2 mt-2 text-break">payload: @Model.PayloadBase64
+signature: @Model.Signature</pre>
+        </details>
+
+        <form asp-controller="Booking" asp-action="ConfirmFakePayment" asp-route-reference="@reference"
+              method="post" class="d-flex gap-2">
+            <button type="submit" class="btn btn-success btn-lg">Xác nhận thanh toán</button>
+            <a class="btn btn-outline-secondary btn-lg" asp-controller="Booking" asp-action="Pay"
+               asp-route-bookingId="@Model.Status.BookingId">Quay lại</a>
+        </form>
+    </div>
+</div>

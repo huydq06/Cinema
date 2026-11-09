@@ -1,0 +1,64 @@
+﻿@model MovieDetailsViewModel
+@{
+    ViewData["Title"] = Model.Movie.Title;
+    var dates = ViewData["Dates"] as IReadOnlyList<DateOnly> ?? [];
+    var selected = ViewData["SelectedDate"] as string ?? "";
+}
+
+<div class="row g-4 mb-4">
+    <div class="col-12 col-md-4 col-lg-3">
+        <div class="cs-movie-poster-wrap" style="border-radius:2px;">
+            <img class="cs-movie-poster" src="@Model.Movie.PosterUrl" alt="@Model.Movie.Title"
+                 onerror="this.src='/img/poster-placeholder.svg'" />
+        </div>
+    </div>
+    <div class="col-12 col-md-8 col-lg-9">
+        <h1 class="h2 fw-bold mb-2" style="letter-spacing:-0.02em;">@Model.Movie.Title</h1>
+        <p class="text-muted mb-3">
+            @Model.Movie.DurationMinutes phút · @string.Join(", ", Model.Movie.Genres)
+            · Khởi chiếu @Model.Movie.ReleaseDate.ToString("dd/MM/yyyy")
+        </p>
+        <p class="mb-3">
+            <span class="cs-movie-badge cs-badge-age">@Model.Movie.AgeRating</span>
+            @if (Model.Movie.IsNowShowing)
+            {
+                <span class="cs-movie-badge cs-badge-showing">Đang chiếu</span>
+            }
+        </p>
+        <p class="small text-muted">
+            Phân loại độ tuổi được hiển thị để tham khảo; nhân viên kiểm tra điều kiện vào rạp tại cửa.
+        </p>
+    </div>
+</div>
+
+<h2 class="cs-section-title"><span>Chọn suất chiếu</span></h2>
+
+<div class="d-flex flex-wrap gap-2 mb-4" role="tablist">
+    @foreach (var day in dates)
+    {
+        var iso = day.ToString("yyyy-MM-dd");
+        var isActive = iso == selected;
+        <a class="cs-slot" style="min-width:72px;@(isActive ? "border-color:var(--cs-red);background:var(--cs-red);color:#fff;" : "")"
+           href="@Url.Action("Details", "Movies", new { slug = Model.Movie.Slug, date = iso })">
+            <span class="time">@day.ToString("dd/MM")</span>
+            <span class="room">@DayLabel(day)</span>
+        </a>
+    }
+</div>
+
+<div id="showtime-slots">
+    <partial name="_ShowtimeSlots" model="Model.Slots" />
+</div>
+
+@functions {
+    private static string DayLabel(DateOnly day) => day.DayOfWeek switch
+    {
+        DayOfWeek.Monday => "Thứ 2",
+        DayOfWeek.Tuesday => "Thứ 3",
+        DayOfWeek.Wednesday => "Thứ 4",
+        DayOfWeek.Thursday => "Thứ 5",
+        DayOfWeek.Friday => "Thứ 6",
+        DayOfWeek.Saturday => "Thứ 7",
+        _ => "Chủ nhật"
+    };
+}

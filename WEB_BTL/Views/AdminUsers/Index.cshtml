@@ -1,0 +1,64 @@
+﻿@model IReadOnlyList<UserListItemDto>
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+    var roles = ViewData["Roles"] as IReadOnlyList<string> ?? [];
+}
+
+<h1 class="cs-page-title mb-3">Người dùng</h1>
+
+<div class="table-responsive">
+    <table class="table table-sm align-middle">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Họ tên</th>
+                <th>Email</th>
+                <th>Vai trò</th>
+                <th>Trạng thái</th>
+                <th>Tạo lúc</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td>@user.UserId</td>
+                    <td>@user.FullName</td>
+                    <td>@user.Email</td>
+                    <td>
+                        <form asp-controller="AdminUsers" asp-action="SetRole" asp-route-id="@user.UserId"
+                              method="post" class="d-flex gap-1">
+                            <select name="roleName" class="form-select form-select-sm" aria-label="Vai trò của @user.Email">
+                                @foreach (var role in roles)
+                                {
+                                    <option value="@role" selected="@(role == user.Role)">@role</option>
+                                }
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Đổi</button>
+                        </form>
+                    </td>
+                    <td>
+                        <span class="badge @(user.IsActive ? "bg-success" : "bg-secondary")">
+                            @(user.IsActive ? "Hoạt động" : "Đã khóa")
+                        </span>
+                    </td>
+                    <td>@user.CreatedAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm")</td>
+                    <td class="text-end">
+                        <form asp-controller="AdminUsers" asp-action="SetActive" asp-route-id="@user.UserId" method="post">
+                            <input type="hidden" name="isActive" value="@(user.IsActive ? "false" : "true")" />
+                            <button type="submit" class="btn btn-sm @(user.IsActive ? "btn-outline-danger" : "btn-outline-success")">
+                                @(user.IsActive ? "Khóa" : "Mở khóa")
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<p class="small text-muted">
+    Khóa tài khoản hoặc đổi vai trò làm tăng SecurityVersion, cookie cũ bị từ chối ở request kế tiếp.
+    Hệ thống không cho khóa/hạ quyền Admin đang hoạt động cuối cùng.
+</p>

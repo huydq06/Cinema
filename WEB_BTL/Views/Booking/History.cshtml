@@ -1,0 +1,69 @@
+﻿@model IReadOnlyList<BookingDto>
+@{
+    ViewData["Title"] = "Lịch sử vé";
+}
+
+<h1 class="cs-page-title mb-3">Lịch sử vé</h1>
+
+@if (Model.Count == 0)
+{
+    <p class="text-muted">Bạn chưa có đơn nào. <a asp-controller="Movies" asp-action="Index">Chọn phim</a> để bắt đầu.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Mã đơn</th>
+                    <th>Phim</th>
+                    <th>Suất chiếu</th>
+                    <th>Ghế</th>
+                    <th class="text-end">Số tiền</th>
+                    <th>Trạng thái</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var booking in Model)
+                {
+                    var startLocal = booking.ShowStartAtUtc.AddHours(7);
+                    var badge = booking.Status switch
+                    {
+                        nameof(BookingStatus.Confirmed) => "bg-success",
+                        nameof(BookingStatus.PendingPayment) => "bg-warning text-dark",
+                        nameof(BookingStatus.Expired) => "bg-secondary",
+                        _ => "bg-danger"
+                    };
+
+                    <tr>
+                        <td><code>@booking.BookingCode</code></td>
+                        <td>@booking.MovieTitle</td>
+                        <td>@startLocal.ToString("HH:mm dd/MM/yyyy") <span class="text-muted small">@booking.RoomName</span></td>
+                        <td>@string.Join(", ", booking.Tickets.Select(t => t.SeatCode))</td>
+                        <td class="text-end">@booking.FinalAmount.ToString("N0") đ</td>
+                        <td><span class="badge @badge">@booking.Status</span></td>
+                        <td class="text-end">
+                            @if (booking.Status == nameof(BookingStatus.PendingPayment))
+                            {
+                                <a class="btn btn-sm btn-primary" asp-controller="Booking" asp-action="Pay"
+                                   asp-route-bookingId="@booking.BookingId">Thanh toán</a>
+
+                                <form asp-controller="Booking" asp-action="Cancel" asp-route-bookingId="@booking.BookingId"
+                                      method="post" class="d-inline">
+                                    <input type="hidden" name="reason" value="Khách hủy" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Hủy</button>
+                                </form>
+                            }
+                            else if (booking.Status == nameof(BookingStatus.Confirmed))
+                            {
+                                <a class="btn btn-sm btn-outline-primary" asp-controller="Booking" asp-action="Ticket"
+                                   asp-route-bookingId="@booking.BookingId">Vé điện tử</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

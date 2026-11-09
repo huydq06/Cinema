@@ -1,0 +1,29 @@
+﻿@model WEB_BTL.Domain.Entities.Showtime
+@{
+    ViewData["Title"] = "Hủy suất chiếu";
+}
+
+<h1 class="cs-page-title mb-3">Hủy suất chiếu #@Model.ShowtimeId</h1>
+
+<div class="alert alert-danger">
+    <p class="mb-1"><strong>@Model.Movie?.Title</strong> · @Model.Room?.RoomName</p>
+    <p class="mb-0">@Model.StartAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm")</p>
+</div>
+
+<p>
+    Hủy suất sẽ: ngừng bán, hủy các đơn đang chờ, vô hiệu vé của đơn đã xác nhận và tạo
+    yêu cầu hoàn toàn phần cho giao dịch đã thu. Ghế và vé được giữ lại để lưu lịch sử.
+</p>
+
+<form asp-controller="AdminShowtimes" asp-action="Cancel" asp-route-id="@Model.ShowtimeId" method="post">
+    <div class="mb-3">
+        <label for="reason" class="form-label">Lý do hủy (bắt buộc, lưu vào nhật ký)</label>
+        <textarea id="reason" name="reason" class="form-control" rows="3" required maxlength="500"></textarea>
+        <span class="text-danger small">@Html.ValidationMessage("reason")</span>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-danger">Xác nhận hủy suất</button>
+        <a class="btn btn-outline-secondary" asp-controller="AdminShowtimes" asp-action="Index">Quay lại</a>
+    </div>
+</form>
